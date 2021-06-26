@@ -1,82 +1,120 @@
-// parent element to store card simple as cool
-const taskcontainer=document.querySelector(".task_container");
-console.log(taskcontainer);
+const taskContainer = document.querySelector(".task__container");
 
-
-
-// global store
-
-const globalstore= [];
-
-const newcard=({id,imageurl,TaskTitle,TaskType,Taskarea})=>`<div class="col-md-6 col-lg-4" id=${id}>
-<div class="card">
-    <div class="card-header d-flex justify-content-end gap-2">
-        <button type="button" class="btn btn-outline-success"><i
-                class="fas fa-pencil-alt"></i></button>
-        <button type="button" class="btn btn-outline-danger"><i
-                class="fas fa-trash-alt"></i></button>
+// new card template
+const generateNewCard = (taskData) => `
+<div class="col-md-6 col-lg-4 mt-3" >
+<div class="card shadow-sm task__card">
+  <div class="card-header d-flex justify-content-end task__card__header  gap-2">
+    <button type="button" class="btn btn-outline-info mr-2" onclick ="editCard()" >
+      <i class="fas fa-pencil-alt" onlick ="editCard()"></i>
+    </button>
+    <button type="button" class="btn btn-outline-danger" id=${taskData.id} onclick="deleteCard.apply(this, arguments)" data-bs-target="#animateModal" data-bs-toggle="modal" >
+                  <i class="fas fa-trash-alt"id=${taskData.id}
+                  data-bs-target="#animateModal" data-bs-toggle="modal" onclick="deleteCard.apply(this, arguments)" ></i>
+                </button>
+  </div>
+  <div class="card-body">
+            <img height="200rem" src="${taskData.imageUrl}" alt="Card image cap" class="card-img-top mb-3 rounded-lg" id="myImg">
+  
+   TASK-DATA- <h4 class="task__card__title" id="title">  ${taskData.taskTitle} </h4>
+    TASK-DESC-<p class="description trim-3-lines text-muted" id="desc" >
+     ${taskData.taskDesc}
+    </p>
+    TASK-TYPE-<div class="tags text-white d-flex flex-wrap">
+    <span class="badge bg-primary m-1" id="type">${taskData.taskType}</span>
     </div>
-    <img src=${imageurl}
-        class="card-img-top" alt="...">
-    <div class="card-body">
-        <h5 class="card-title">${TaskTitle}f</h5>
-        <p class="card-text">${TaskType}
-        </p>
-        <span class="badge bg-primary">${Taskarea}</span>
-    </div>
-    <div class="card-footer text-muted">
-        <button type="button" class="btn btn-outline-primary float-end">open task</button>
-    </div>
+  </div>
+  <div class="card-footer">
+    
+    <button type="button" onclick="saveEdit()" class="btn btn-info float-right"">
+      Save Changes
+    </button>
+    <button type="button"  class="btn btn-info float-right"data-bs-target="#openModal" onclick="openModal()" data-bs-toggle="modal">
+    <i class="fas fa-external-link-alt" onclick="openModal()"
+    data-bs-target="#openModal" data-bs-toggle="modal"></i>
+    </button>
+  </div>
 </div>
-</div>`
-const loadinitialtaskcards=()=>{
-    // getlocalitem
-    const getinitialdata=localStorage.getItem("tasky");
-    if(!getinitialdata)
-    return;
-    // conver into parse ie.object
-    const {cards}=JSON.parse(getinitialdata);
-    
+</div>
+`;
 
-    // now put into the dom 
-    cards.map((cardobj)=>{
-        const createnewcard=newcard(cardobj);
-        taskcontainer.insertAdjacentHTML("beforeend",createnewcard);
-        globalstore.push(cardobj);
-    });
-    
+let globalStorage = []; // declaring an empty array to store data
+// get card data on load/refreah from local storage
+const loadCardData = () => {
+  const getCardData = localStorage.getItem("tasky");
+  const { cards } = JSON.parse(getCardData);
 
+  cards.map((cardObject) => {
+    taskContainer.insertAdjacentHTML("beforeend", generateNewCard(cardObject));
 
-}
+    globalStorage.push(cardObject);
+  });
+};
+// save changees of new task card
+const saveChanges = () => {
+  const taskData = {
+    id: Date.now(),
+    imageUrl: document.getElementById("imageUrl").value,
+    taskTitle: document.getElementById("taskTitle").value,
+    taskType: document.getElementById("taskType").value,
+    taskDesc: document.getElementById("taskDesc").value,
+  };
+  taskContainer.insertAdjacentHTML("beforeend", generateNewCard(taskData));
 
+  globalStorage.push(taskData);
 
-const savechanges=()=>
-{
-    const taskdata={
-        id:`${Date.now()}`, /*unique number for card id*/
-        imageurl:document.getElementById("imageurl").value,
-        TaskTitle:document.getElementById("TaskTitle").value,
-        TaskType:document.getElementById("TaskType").value,
-        Taskarea:document.getElementById("Taskarea").value
-    };
-    const createnewcard=newcard(taskdata);
-taskcontainer.insertAdjacentHTML("beforeend",createnewcard);
+  localStorage.setItem("tasky", JSON.stringify({ cards: globalStorage }));
+};
+//delete card
+const deleteCard = (event) => {
+  event = window.event;
+  const targetId = event.target.id;
+  const tagName = event.target.tagName;
 
+  globalStorage = globalStorage.filter(
+    (cardObject) => cardObject.id != targetId
+  );
+  localStorage.setItem("tasky", JSON.stringify({ cards: globalStorage }));
 
-// push data in local storage
-globalstore.push(taskdata);
-
-// console.log(globalstore);
-localStorage.setItem("tasky",JSON.stringify({cards:globalstore}));
-
+  if (tagName == "BUTTON") {
+    return taskContainer.removeChild(
+      event.target.parentNode.parentNode.parentNode
+    );
+  } else {
+    return taskContainer.removeChild(event.target.parentNode.parentNode.parentNode.parentNode);
+  }
 };
 
-// issue
-// the modal was not closing after done
-// the cards were deleted after refresh
+//edit card
+const editCard = () => {
+  document.getElementById("title").contentEditable = "true";
+  document.getElementById("desc").contentEditable = "true";
+  document.getElementById("type").contentEditable = "true";
+};
+const saveEdit = () => {
+  const editTitle = document.getElementById("title").textContent;
+  const editType = document.getElementById("type").textContent;
+  const editDesc = document.getElementById("desc").textContent;
 
+  document.getElementById("title").innerHTML = editTitle;
+  document.getElementById("type").innerHTML = editType;
+  document.getElementById("desc").innerHTML = editDesc;
 
-// feature
-// open task
-// edit task
-// delete button
+  document.getElementById("title").contentEditable = "false";
+  document.getElementById("desc").contentEditable = "false";
+  document.getElementById("type").contentEditable = "false";
+};
+
+const openModal = () => {
+  openTitle = document.getElementById("title").textContent;
+  openType = document.getElementById("type").textContent;
+  openDesc = document.getElementById("desc").textContent;
+  openImage = document.images.namedItem("myImg").src;
+
+  document.getElementById("openTitle").innerHTML = openTitle;
+  document.getElementById("openType").innerHTML = openType;
+  document.getElementById("openDesc").innerHTML = openDesc;
+  document.getElementById("openImage").src = openImage;
+  
+
+}
